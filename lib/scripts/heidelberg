@@ -1,0 +1,294 @@
+# This is the rpmstrap script for heidelberg (FC3).
+# It is based upon an rpmstrap originally by
+# Branden Robinson at Progeny Linux Systems, Inc.
+# New segments of code and modifications made by
+# Sam Hart.
+
+# Copyright 2004 Progeny Linux Systems, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+# Author: Sam Hart
+
+suite_notes() {
+    cat <<EOF
+Fedora Core 3 (heidelberg) Suite Script
+---------------------------------------
+Builds a basic Fedora Core 3 bootstrap.
+
+Author: Sam Hart
+
+EOF
+}
+
+
+work_out_mirror() {
+    local big_mirror_list=""
+    trace "Checking for $ARCH arch"
+    case $ARCH in
+        i[3456]86)
+            big_mirror_list=$(cat <<EOF
+http://download.fedora.redhat.com/pub/fedora/linux/core/3/i386/os/Fedora/RPMS/
+http://mirror.linux.duke.edu/pub/fedora/linux/core/3/i386/os/Fedora/RPMS/
+http://distro.ibiblio.org/pub/linux/distributions/fedora/linux/core/3/i386/os/Fedora/RPMS/
+http://mirror.eas.muohio.edu/fedora/linux/core/3/i386/os/Fedora/RPMS/
+http://mirrors.xmission.com/fedora/core/3/i386/os/Fedora/RPMS/
+http://redhat.secsup.org/fedora/core/3/i386/os/Fedora/RPMS/
+EOF
+            )
+            ;;
+        "x86_64")
+            big_mirror_list=$(cat <<EOF
+http://download.fedora.redhat.com/pub/fedora/linux/core/3/x86_64/os/Fedora/RPMS/
+http://mirror.linux.duke.edu/pub/fedora/linux/core/3/x86_64/os/Fedora/RPMS/
+http://distro.ibiblio.org/pub/linux/distributions/fedora/linux/core/3/x86_64/os/Fedora/RPMS/
+http://mirror.eas.muohio.edu/fedora/linux/core/3/x86_64/os/Fedora/RPMS/
+http://mirrors.xmission.com/fedora/core/3/x86_64/os/Fedora/RPMS/
+http://redhat.secsup.org/fedora/core/3/x86_64/os/Fedora/RPMS/
+EOF
+            )
+            ;;
+        *)
+            die "Arch $ARCH is unsupported"
+            ;;
+    esac
+
+    set_mirrors $big_mirror_list
+}
+
+work_out_rpms() {
+    case $ARCH in
+        "x86_64")
+            RPMS=$(cat <<EOF
+0:setup-2.5.36-1.noarch.rpm
+1:filesystem-2.3.0-1.x86_64.rpm
+2:basesystem-8.0-4.noarch.rpm
+3:tzdata-2004e-2.noarch.rpm
+4:glibc-common-2.3.3-74.x86_64.rpm
+5:libgcc-3.4.2-6.fc3.i386.rpm
+5:libgcc-3.4.2-6.fc3.x86_64.rpm
+6:glibc-2.3.3-74.x86_64.rpm
+6:glibc-2.3.3-74.i686.rpm
+7:mktemp-1.5-10.x86_64.rpm
+8:termcap-5.4-3.noarch.rpm
+9:libtermcap-2.0.8-39.x86_64.rpm
+10:bash-3.0-17.x86_64.rpm
+11:ncurses-5.4-13.x86_64.rpm
+11:ncurses-5.4-13.i386.rpm
+12:zlib-1.2.1.2-1.i386.rpm
+12:zlib-1.2.1.2-1.x86_64.rpm
+13:info-4.7-5.x86_64.rpm
+14:libselinux-1.17.14-1.i386.rpm
+14:libselinux-1.17.14-1.x86_64.rpm
+15:findutils-4.1.20-7.x86_64.rpm
+15:pcre-4.5-3.x86_64.rpm
+16:grep-2.5.1-31.x86_64.rpm
+16:words-2-23.noarch.rpm
+17:libattr-2.4.16-3.i386.rpm
+17:libattr-2.4.16-3.x86_64.rpm
+18:libacl-2.2.23-5.i386.rpm
+18:libacl-2.2.23-5.x86_64.rpm
+19:cracklib-2.7-28.i386.rpm
+19:cracklib-2.7-28.x86_64.rpm
+20:cracklib-dicts-2.7-28.x86_64.rpm
+21:libstdc++-3.4.2-6.fc3.i386.rpm
+21:libstdc++-3.4.2-6.fc3.x86_64.rpm
+22:db4-4.2.52-6.i386.rpm
+22:db4-4.2.52-6.x86_64.rpm
+23:glib-1.2.10-15.x86_64.rpm
+24:glib2-2.4.7-1.x86_64.rpm
+24:glib2-2.4.7-1.i386.rpm
+25:sed-4.1.2-4.x86_64.rpm
+26:gawk-3.1.3-9.x86_64.rpm
+27:fedora-release-3-9.x86_64.rpm
+28:psmisc-21.4-4.x86_64.rpm
+29:iproute-2.6.9-3.x86_64.rpm
+30:iputils-20020927-16.x86_64.rpm
+31:shadow-utils-4.0.3-37.x86_64.rpm
+32:chkconfig-1.3.11.1-1.x86_64.rpm
+33:e2fsprogs-1.35-11.2.x86_64.rpm
+34:e2fsprogs-1.35-11.2.i386.rpm
+35:ethtool-1.8-4.x86_64.rpm
+36:mingetty-1.07-3.x86_64.rpm
+37:net-tools-1.60-37.x86_64.rpm
+38:popt-1.9.1-21.i386.rpm
+38:popt-1.9.1-21.x86_64.rpm
+38:less-382-4.x86_64.rpm
+38:tar-1.14-4.x86_64.rpm
+38:hwdata-0.145-1.noarch.rpm
+38:usbutils-0.11-6.1.x86_64.rpm
+37:device-mapper-1.00.19-2.x86_64.rpm
+37:libsepol-1.1.1-2.x86_64.rpm
+39:coreutils-5.2.1-31.x86_64.rpm
+39:pam-0.77-65.x86_64.rpm
+39:pam-0.77-65.i386.rpm
+39:cpio-2.5-7.x86_64.rpm
+39:MAKEDEV-3.13-1.x86_64.rpm
+39:gzip-1.3.3-13.x86_64.rpm
+39:hotplug-2004_04_01-6.x86_64.rpm
+39:lvm2-2.00.25-1.01.x86_64.rpm
+39:mkinitrd-4.1.18-2.x86_64.rpm
+39:kernel-2.6.9-1.667.x86_64.rpm
+39:initscripts-7.93.2-1.x86_64.rpm
+39:SysVinit-2.85-34.x86_64.rpm
+39:util-linux-2.12a-16.x86_64.rpm
+39:sysklogd-1.4.1-22.x86_64.rpm
+39:udev-039-8.FC3.x86_64.rpm
+39:which-2.16-4.x86_64.rpm
+39:module-init-tools-3.1-0.pre5.3.x86_64.rpm
+39:procps-3.2.3-5.x86_64.rpm
+40:beecrypt-3.1.0-6.x86_64.rpm
+41:bzip2-libs-1.0.2-13.i386.rpm
+41:bzip2-libs-1.0.2-13.x86_64.rpm
+42:bzip2-1.0.2-13.x86_64.rpm
+43:elfutils-libelf-0.96-1.x86_64.rpm
+44:elfutils-0.96-1.x86_64.rpm
+45:gdbm-1.8.0-24.x86_64.rpm
+45:gdbm-1.8.0-24.i386.rpm
+46:gmp-4.1.4-3.x86_64.rpm
+47:krb5-libs-1.3.4-7.x86_64.rpm
+47:krb5-libs-1.3.4-7.i386.rpm
+48:openssl-0.9.7a-40.x86_64.rpm
+48:openssl-0.9.7a-40.i686.rpm
+49:libxml2-2.6.14-2.x86_64.rpm
+49:libxml2-2.6.14-2.i386.rpm
+50:readline-4.3-13.x86_64.rpm
+51:python-2.3.4-11.x86_64.rpm
+52:libxml2-python-2.6.14-2.x86_64.rpm
+53:rpm-4.3.2-21.x86_64.rpm
+54:rpm-python-4.3.2-21.x86_64.rpm
+55:wget-1.9.1-17.x86_64.rpm
+56:yum-2.1.11-3.noarch.rpm
+EOF
+            )
+            ;;
+        i[3456]86)
+            RPMS=$(cat <<EOF
+0:setup-2.5.36-1.noarch.rpm
+1:filesystem-2.3.0-1.i386.rpm
+2:basesystem-8.0-4.noarch.rpm
+3:tzdata-2004e-2.noarch.rpm
+4:glibc-common-2.3.3-74.i386.rpm
+5:libgcc-3.4.2-6.fc3.i386.rpm
+6:glibc-2.3.3-74.i386.rpm
+7:mktemp-1.5-10.i386.rpm
+8:termcap-5.4-3.noarch.rpm
+9:libtermcap-2.0.8-39.i386.rpm
+10:bash-3.0-17.i386.rpm
+11:ncurses-5.4-13.i386.rpm
+12:zlib-1.2.1.2-1.i386.rpm
+13:info-4.7-5.i386.rpm
+14:libselinux-1.17.14-1.i386.rpm
+15:findutils-4.1.20-7.i386.rpm
+15:pcre-4.5-3.i386.rpm
+16:grep-2.5.1-31.i386.rpm
+16:words-2-23.noarch.rpm
+17:libattr-2.4.16-3.i386.rpm
+18:libacl-2.2.23-5.i386.rpm
+19:cracklib-2.7-28.i386.rpm
+20:cracklib-dicts-2.7-28.i386.rpm
+21:libstdc++-3.4.2-6.fc3.i386.rpm
+22:db4-4.2.52-6.i386.rpm
+23:glib-1.2.10-15.i386.rpm
+24:glib2-2.4.7-1.i386.rpm
+25:sed-4.1.2-4.i386.rpm
+26:gawk-3.1.3-9.i386.rpm
+27:fedora-release-3-8.i386.rpm
+28:psmisc-21.4-4.i386.rpm
+29:iproute-2.6.9-3.i386.rpm
+30:iputils-20020927-16.i386.rpm
+31:shadow-utils-4.0.3-37.i386.rpm
+32:chkconfig-1.3.11.1-1.i386.rpm
+33:e2fsprogs-1.35-11.2.i386.rpm
+34:ethtool-1.8-4.i386.rpm
+35:mingetty-1.07-3.i386.rpm
+36:net-tools-1.60-37.i386.rpm
+37:popt-1.9.1-21.i386.rpm
+37:less-382-4.i386.rpm
+37:tar-1.14-4.i386.rpm
+37:hwdata-0.145-1.noarch.rpm
+37:usbutils-0.11-6.1.i386.rpm
+37:device-mapper-1.00.19-2.i386.rpm
+37:libsepol-1.1.1-2.i386.rpm
+38:coreutils-5.2.1-31.i386.rpm
+38:pam-0.77-65.i386.rpm
+38:mkinitrd-4.1.18-2.i386.rpm
+38:kernel-2.6.9-1.667.i586.rpm
+38:cpio-2.5-7.i386.rpm
+38:gzip-1.3.3-13.i386.rpm
+38:MAKEDEV-3.13-1.i386.rpm
+38:hotplug-2004_04_01-6.i386.rpm
+38:lvm2-2.00.25-1.01.i386.rpm
+38:initscripts-7.93.2-1.i386.rpm
+38:SysVinit-2.85-34.i386.rpm
+38:util-linux-2.12a-16.i386.rpm
+38:sysklogd-1.4.1-22.i386.rpm
+38:udev-039-8.FC3.i386.rpm
+38:which-2.16-4.i386.rpm
+38:module-init-tools-3.1-0.pre5.3.i386.rpm
+38:procps-3.2.3-5.i386.rpm
+38:readline-4.3-13.i386.rpm
+39:beecrypt-3.1.0-6.i386.rpm
+40:bzip2-libs-1.0.2-13.i386.rpm
+41:bzip2-1.0.2-13.i386.rpm
+42:elfutils-libelf-0.96-1.i386.rpm
+43:elfutils-0.96-1.i386.rpm
+44:gdbm-1.8.0-24.i386.rpm
+45:gmp-4.1.4-3.i386.rpm
+46:krb5-libs-1.3.4-7.i386.rpm
+47:openssl-0.9.7a-40.i386.rpm
+48:libxml2-2.6.14-2.i386.rpm
+49:python-2.3.4-11.i386.rpm
+50:libxml2-python-2.6.14-2.i386.rpm
+50:file-4.10-2.i386.rpm
+50:perl-5.8.5-9.i386.rpm
+50:perl-Filter-1.30-6.i386.rpm
+50:patch-2.5.4-20.i386.rpm
+51:rpmdb-fedora-3-0.20041103.i386.rpm
+51:rpm-build-4.3.2-21.i386.rpm
+51:rpm-libs-4.3.2-21.i386.rpm
+51:rpm-4.3.2-21.i386.rpm
+52:rpm-python-4.3.2-21.i386.rpm
+53:wget-1.9.1-17.i386.rpm
+54:yum-2.1.11-3.noarch.rpm
+EOF
+            )
+            ;;
+        *)
+            # No clue
+            ;;
+esac
+}
+
+print_rpms() {
+    local rpm_list=$(echo "$RPMS" | sed "s/[[:digit:]]\+://")
+
+    echo "RPMs for suite $RPMSUITE and arch $ARCH"
+    for a in $rpm_list
+    do
+        echo " : $a"
+    done
+}
+
+install_rpms() {
+    install_by_pass $RPMS
+}
+
+suite_details() {
+    for a in $RPMS
+    do
+        echo $a
+    done
+}

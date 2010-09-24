@@ -1,0 +1,178 @@
+# Copyright 2005 Progeny Linux Systems, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+# Authors: Sam Hart, Yikuo Chan, Jake Tabke, Derrik Pates
+
+suite_notes() {
+    cat <<EOF
+CentOS 3 Suite Script
+---------------------
+Builds a basic CentOS 3.x bootstrap.
+
+Authors: Sam Hart, Yikuo Chan, Jake Tabke, Derrik Pates
+
+EOF
+}
+
+
+work_out_mirror() {
+    local big_mirror_list=""
+    case $ARCH in
+        i[3456]86)
+            big_mirror_list=$(cat <<EOF
+http://mirror.centos.org/centos/3/os/i386/RedHat/RPMS/
+http://centos.cs.ucr.edu/centos/centos/3.5/os/i386/RedHat/RPMS/
+http://ibiblio.org/pub/linux/distributions/caoslinux/centos/3/os/i386/RedHat/RPMS/
+http://centos.absinet.net/centos/3.5/os/i386/RedHat/RPMS/
+EOF
+            )
+            ;;
+        *)
+            die "Arch $ARCH is unsupported"
+            ;;
+    esac
+
+    set_mirrors $big_mirror_list
+}
+
+work_out_rpms() {
+    case $ARCH in
+        i[3456]86)
+            RPMS=$(cat <<EOF
+0:setup-2.5.27-1.noarch.rpm
+1:filesystem-2.2.1-3.centos.1.i386.rpm
+2:basesystem-8.0-2.centos.0.noarch.rpm
+3:tzdata-2005m-1.EL3.noarch.rpm
+4:glibc-common-2.3.2-95.37.i386.rpm
+5:libgcc-3.2.3-53.i386.rpm
+6:glibc-2.3.2-95.37.i386.rpm
+7:mktemp-1.5-18.2.i386.rpm
+8:termcap-11.0.1-17.1.noarch.rpm
+9:libtermcap-2.0.8-35.i386.rpm
+10:bash-2.05b-41.4.centos.0.i386.rpm
+11:zlib-1.1.4-8.1.i386.rpm
+12:chkconfig-1.3.13.2-0.3.i386.rpm
+13:glib-1.2.10-11.1.i386.rpm
+14:words-2-21.noarch.rpm
+15:cracklib-2.7-22.i386.rpm
+15:cracklib-dicts-2.7-22.i386.rpm
+16:pcre-3.9-10.2.i386.rpm
+17:libattr-2.2.0-1.i386.rpm
+18:libacl-2.2.3-1.i386.rpm
+19:laus-libs-0.1-70RHEL3.i386.rpm
+20:iproute-2.4.7-11.30E.1.i386.rpm
+21:popt-1.8.2-24_nonptl.i386.rpm
+22:coreutils-4.5.3-28.i386.rpm
+22:db4-4.1.25-8.1.i386.rpm
+22:dev-3.3.12.3-1.centos.0.i386.rpm
+22:e2fsprogs-1.32-15.1.i386.rpm
+22:ethtool-1.8-3.3.i386.rpm
+22:findutils-4.1.7-9.i386.rpm
+22:gawk-3.1.1-9.i386.rpm
+22:grep-2.5.1-24.5.i386.rpm
+22:gpm-1.19.3-27.2.i386.rpm
+22:info-4.5-3.i386.rpm
+22:initscripts-7.31.27.EL-1.centos.1.i386.rpm
+22:iputils-20020927-11.30.2.i386.rpm
+22:mingetty-1.06-1.i386.rpm
+22:modutils-2.4.25-14.EL.i386.rpm
+22:mount-2.11y-31.11.i386.rpm
+22:ncurses-5.3-9.4.i386.rpm
+22:net-tools-1.60-20E.9.i386.rpm
+22:pam-0.75-66.i386.rpm
+22:procps-2.0.17-13.7.i386.rpm
+22:psmisc-21.3-2.i386.rpm
+22:sed-4.0.7-3.i386.rpm
+22:shadow-utils-4.0.3-25.RHEL3.i386.rpm
+22:sysklogd-1.4.1-26_EL3.i386.rpm
+22:SysVinit-2.85-4.4.i386.rpm
+22:util-linux-2.11y-31.11.i386.rpm
+22:which-2.14-7.i386.rpm
+23:glib2-2.2.3-2.0.i386.rpm
+24:centos-release-3-6.1.i386.rpm
+25:readline-4.3-5.2.i386.rpm
+26:less-378-12.i386.rpm
+27:gzip-1.3.3-12.rhel3.i386.rpm
+28:tar-1.13.25-13.i386.rpm
+29:lvm-1.0.8-14.i386.rpm
+30:losetup-2.11y-31.11.i386.rpm
+31:mkinitrd-3.5.13.6-1.i386.rpm
+32:file-3.39-9.EL3.3.i386.rpm
+33:kernel-2.4.21-37.EL.i686.rpm
+34:hwdata-0.101.20-1.noarch.rpm
+35:cpio-2.5-4.RHEL3.i386.rpm
+36:MAKEDEV-3.3.12.3-1.centos.0.i386.rpm
+37:beecrypt-3.0.1-0.20030630.i386.rpm
+38:bzip2-libs-1.0.2-11.EL3.4.i386.rpm
+39:bzip2-1.0.2-11.EL3.4.i386.rpm
+40:elfutils-libelf-0.94-1.i386.rpm
+40:binutils-2.14.90.0.4-39.i386.rpm
+41:elfutils-0.94-1.i386.rpm
+42:gdbm-1.8.0-20.i386.rpm
+43:gmp-4.1.2-5.i386.rpm
+44:krb5-libs-1.2.7-47.i386.rpm
+45:openssl-0.9.7a-33.17.i386.rpm
+46:libxml2-2.5.10-7.i386.rpm
+47:expat-1.95.5-6.i386.rpm
+48:python-2.2.3-6.1.i386.rpm
+49:libxml2-python-2.5.10-7.i386.rpm
+49:perl-5.8.0-89.10.i386.rpm
+49:perl-Filter-1.29-3.i386.rpm
+49:patch-2.5.4-16.i386.rpm
+50:rpmdb-redhat-3.4-0.20051015.i386.rpm
+50:rpm-build-4.2.3-24_nonptl.i386.rpm
+50:rpm-libs-4.2.3-24_nonptl.i386.rpm
+50:rpm-4.2.3-24_nonptl.i386.rpm
+51:rpm-python-4.2.3-24_nonptl.i386.rpm
+52:wget-1.10.1-1.30E.1.i386.rpm
+53:centos-yumconf-1-11.noarch.rpm
+53:yum-2.0.8-1.centos.7.noarch.rpm
+54:nano-1.2.1-4.i386.rpm
+55:openldap-2.0.27-17.i386.rpm
+55:cyrus-sasl-2.1.15-10.i386.rpm
+55:cyrus-sasl-md5-2.1.15-10.i386.rpm
+56:libuser-0.51.7-1.EL3.3.i386.rpm
+57:passwd-0.68-3.1.i386.rpm
+58:jfsutils-1.1.2-2.i386.rpm
+EOF
+            )
+            ;;
+        *)
+            # No clue
+            ;;
+esac
+}
+
+print_rpms() {
+    local rpm_list=$(echo "$RPMS" | sed "s/[[:digit:]]\+://")
+
+    echo "RPMs for suite $RPMSUITE and arch $ARCH"
+    for a in $rpm_list
+    do
+        echo " : $a"
+    done
+}
+
+install_rpms() {
+    install_by_pass $RPMS
+}
+
+suite_details() {
+    for a in $RPMS
+    do
+        echo $a
+    done
+}

@@ -1,0 +1,322 @@
+usage_error() {
+  echo "usage: [OPTION]... <suite> <target> [<mirror>]"
+  echo "Try \`$PROGNAME --help' for more information."
+  die "$@"
+}
+
+trace () {
+    if [ -n "$DEBUG" ]; then
+        echo "$PROGNAME: debug: $*" >&2
+    fi
+}
+
+warn () {
+    echo "$PROGNAME: warning: $*" >&2
+}
+
+die () {
+    echo "$PROGNAME: critical error: $*" >&2
+    cleanup_env
+    exit 1
+}
+
+get_rpms() {
+    # Takes array of rpms to obtain
+    local verbose="-q"
+
+    if [ -n "$DEBUG" ]; then
+        verbose=""
+    fi
+
+    PKG_DIR=$TMP_DIR
+
+    if [ -n "$LOCAL_SOURCE" ]; then
+        trace "get_rpms(): Using $LOCAL_SOURCE for RPMS"
+        for a in $@
+        do
+            if [ ! -f "$LOCAL_SOURCE/$a" ]; then
+                die "$a not found at $LOCAL_SOURCE"
+            fi
+            if [ -n "$DOWNLOAD_ONLY" ]; then
+                cp -f $LOCAL_SOURCE/$a $TMP_DIR
+            fi
+        done
+        if [ -n "$DOWNLOAD_ONLY" ]; then
+            mv $TMP_DIR $TARGET
+        fi
+        PKG_DIR=$LOCAL_SOURCE
+        KEEP_TMP="yes"
+    elif [ -n "$PDK_SOURCE" ]; then
+        trace "get_rpms(): Using PDK $PDK_SOURCE for RPMS"
+        warn "Be sure your PDK environment is correct. If anything"
+        warn "fails here, the most likely culprit is your PDK workspace."
+        local PDK_REPORT_XML=$(cat <<EOF
+<?xml version="1.0"?>
+    <component>
+        <meta>
+            <repo-type>report</repo-type>
+            <package-format>%(filename)s,%(cache_location)s</package-format>
+        </meta>
+        <contents>
+            <component>$PDK_COMPONENT</component>
+        </contents>
+    </component>
+EOF
+        )
+        echo $PDK_REPORT_XML > $TMP_DIR/.report.xml
+
+        local PDK_REPORT=$(cd $PDK_WORKSPACE/work; pdk repogen $TMP_DIR/.report.xml)
+        trace $PDK_REPORT
+        for a in $PDK_REPORT
+        do
+            local DESTNAME="$TMP_DIR/$(echo $a | cut -f1 -d",")"
+            local CACHENAME="$(echo $a | cut -f2 -d",")"
+            ln -f $CACHENAME $DESTNAME
+            trace "ln -f $CACHENAME $DESTNAME"
+        done
+    elif [ -n "$UNPACK_TARBALL" ]; then
+        trace "get_rpms(): Using $UNPACK_TARBALL for RPMS"
+        if [ ! -n "$TARBALL_STRIP_DEPTH" ]; then
+            warn "When unpacking from tarball, it is generally advisable to specify a '--strip-path'."
+            warn "If you have any troubles, read the info pages on tar and try a '--strip-path'."
+        fi
+        for a in $@
+        do
+            if [ ! -f "$TMP_DIR/$a" ]; then
+                die "$a not found inside $UNPACK_TARBALL"
+            fi
+        done
+        PKG_DIR=$TMP_DIR
+    else
+        setup_env
+        cd $TMP_DIR
+        for a in $@ $INCLUDES
+        do
+            if [ -n "$WGET_DELAY" ]; then
+                sleep ${WGET_DELAY}s
+            fi
+            if [ -n "$MIRROR" ]; then
+                trace "get_rpms(): Getting RPM from $MIRROR"
+                wget $verbose ${MIRROR%/}/$a -O $a
+                if [ ! -f "$a" ]; then
+                    die "$a not retrievable from $MIRROR"
+                fi
+            else
+                if [ -n "$TRY_MIRRORS" ]; then
+                    for mir in $MIRROR_LIST
+                    do
+                        trace "get_rpms(): Getting RPM from $mir"
+                        wget $verbose ${mir%/}/$a -O $a
+                        if [ -s "$a" ]; then
+                            break
+                        fi
+                    done
+                    if [ ! -f "$TMP_DIR/$a" ]; then
+                        die "Could not obtain $a from mirror list"
+                    fi
+                else
+                    trace "get_rpms(): Getting RPM from $BEST_MIRROR"
+                    trace "wget $verbose ${BEST_MIRROR%/}/$a"
+                    wget $verbose ${BEST_MIRROR%/}/$a -O $a
+                    if [ ! -f "$a" ]; then
+                        die "Could not obtain $a from $BEST_MIRROR"
+                    fi
+                fi
+            fi
+        done
+        cd $PWD
+        if [ -n "$DOWNLOAD_ONLY" ]; then
+            mv $TMP_DIR $TARGET
+        fi
+    fi
+}
+
+get_rpms_fuzzy() {
+    # Takes array of rpms to obtain
+    setup_env
+    cd $TMP_DIR
+    local verbose="-q"
+    if [ -n "$DEBUG" ]; then
+        verbose=""
+    fi
+
+    for a in $@
+    do
+        wget $verbose -v -r -nH -nd --no-parent -l inf -A ""$a-*"" $RPM_URL
+    done
+    cd $PWD
+    if [ -n "$DOWNLOAD_ONLY" ]; then
+        mv $TMP_DIR $TARGET
+    fi
+
+}
+
+find_best_mirror() {
+    # Given a list of mirrors, run through them finding
+    # the "best" one
+    #
+    # XXX: FIXME
+    # It would be way cool to be able to store this information
+    # site-wide (/etc/rpmstrap or some such whatever) so you could
+    # run it once (or from a cron or whatever) and it would store
+    # its findings there for default usage. This is because, as
+    # it stands right now, finding the best mirror will probably
+    # take longer than it would just to use any single mirror.
+    # i.e., this function is worthless... but it has potential
+    # XXX
+    #
+    local lowtimepass=99999999999999999999999999
+    local lowurl=""
+    for a in $@
+    do
+        if [ "$lowurl" = "" ]; then
+            lowurl=$a
+        fi
+        timepass=$(/usr/bin/time -f "%e" --quiet wget -q -c -T 1 --connect-timeout=.5 $a --read-timeout=.5 2>&1)
+        if [ $(echo "$timepass < $lowtimepass" | bc -l) ]; then
+            lowtimepass=$timepass
+            lowurl=$a
+        fi
+    done
+    BEST_MIRROR=$lowurl
+}
+
+setup_env() {
+    trace "setup_env()"
+    cleanup_env
+    mkdir -p $TMP_DIR
+    if [ -n "$UNPACK_TARBALL" ]; then
+        trace "Using $UNPACK_TARBALL for RPMS"
+        local noisy=""
+        if [ -n "$DEBUG" ]; then
+            noisy="v"
+        fi
+        if [ "${UNPACK_TARBALL%.tar}" != "$UNPACK_TARBALL" ]; then
+            trace "Normal tarball"
+            (cd "$TMP_DIR" && tar -x${noisy} $TARBALL_STRIP_DEPTH -f "$UNPACK_TARBALL")
+        elif [ "${UNPACK_TARBALL%.tgz}" != "$UNPACK_TARBALL" ]; then
+            trace "Gzipped tarball"
+            (cd "$TMP_DIR" && zcat "$UNPACK_TARBALL" | tar x${noisy} $TARBALL_STRIP_DEPTH -f -)
+        else
+            die "Unknown tarball: must be either .tar or .tgz"
+        fi
+    fi
+}
+
+cleanup_env() {
+    rm -fr $TMP_DIR
+}
+
+set_mirrors() {
+    # Given a list of mirrors, will select one or more
+    # for the real mirror list
+    if [ ! -n "$1" ]; then
+        die "Error in suite '$RPMSUITE'! No mirror list passed to set_mirrors()"
+    fi
+
+    if [ -n "$TRY_MIRRORS" ]; then
+        MIRROR_LIST=$@
+    else
+        MIRROR_LIST=$1
+    fi
+
+    if [ -n "$FIND_BEST_MIRROR" ]; then
+        trace "Finding best mirror- This will take a while"
+        # Find shortest speed
+        find_best_mirror $big_mirror_list
+    else
+        BEST_MIRROR=$1
+    fi
+}
+
+install_by_pass() {
+    # Given a list of RPMs ordered by pass, will install them
+    # This is the basic install function provided by rpmstrap,
+    # if you need anything else above and beyond this, you
+    # will have to script it yourself.
+    local RPMS_LIST=$1
+    shift
+    for a in $@
+    do
+        local b=$(echo "$a" | sed "s/[[:digit:]]\+://")
+        if ! echo "$EXCLUDES" | grep $b > /dev/null; then
+            RPMS_LIST=$(echo -e "$RPMS_LIST\n$a")
+        else
+            trace "'$b' found in exclude list. Removing from install.."
+        fi
+    done
+    local rpms_to_get=$(echo "$RPMS_LIST" | sed "s/[[:digit:]]\+://")
+    get_rpms $rpms_to_get
+
+    local rpm_force_opt=""
+    if [ -n "$FORCE_RPM" ]; then
+        rpm_force_opt="--force --nodeps"
+    fi
+
+    local rpm_ignore_arch_opt=""
+    if [ -n "$IGNORE_ARCH" ]; then
+        rpm_ignore_arch_opt="--ignorearch"
+    fi
+
+    local rpm_install_opt="--install"
+    if [ -n "$TRY_UPGRADE" ]; then
+        rpm_install_opt="--upgrade"
+    fi
+
+    if [ "$DOWNLOAD_ONLY" = "" ]; then
+        if [ $(id -u) -ne 0 ]; then
+            die "must have root privileges to create target"
+        fi
+
+        trace "creating target directory"
+        if [ -e "$TARGET" ]; then
+            warn "target directory $TARGET already exists"
+        fi
+
+        mkdir -p "$TARGET/var/lib/rpm"
+
+        local passnum=0
+
+        cd $PKG_DIR
+
+        while :; do
+            trace "Installing pass number $passnum..."
+            local pass=$(echo "$RPMS_LIST" | grep "^$passnum:" | sed 's/^[0-9]\+://')
+            if [ -z "$pass" ]; then
+                trace "...nothing left to do."
+                break
+            else
+                set -- $pass
+
+                # make sure each RPM exists
+                for RPM; do
+                    if [ ! -e "$RPM" ]; then
+                        die "cannot find required package $RPM"
+                    fi
+                done
+
+                # rpm insists on having an absolute path to its --root option's argument
+                if ! expr "$TARGET" : "/" >/dev/null 2>&1; then
+                    TARGET="$PWD/$TARGET"
+                fi
+                trace "Installing $* to $TARGET..."
+                if ! rpm $rpm_install_opt $rpm_force_opt --root "$TARGET" $@; then
+                    die "command \"rpm $rpm_install_opt $rpm_force_opt $rpm_ignore_arch_opt --root $TARGET $*\"" \
+                    "failed"
+                fi
+            fi
+            passnum=$(( $passnum + 1 ))
+        done
+
+        for fname in $INCLUDES;
+        do
+            trace "Installing included package : $fname..."
+            if ! rpm --install $rpm_force_opt --root "$TARGET" $fname; then
+                die "command \"rpm --install $rpm_force_opt --root $TARGET $fname\"" \
+                "failed"
+            fi
+        done
+
+        cd $PWD
+    fi
+}

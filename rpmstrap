@@ -1,0 +1,392 @@
+#!/bin/sh
+
+# Copyright 2005 Progeny Linux Systems, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+# Author: Sam Hart, Juraj Bednar, Branden Robinson
+# Inspired by and modeled after debootstrap by Anthony Towns
+
+unset DEBUG ONLY_LIST_RPMS DOWNLOAD_ONLY ARCH || true
+unset UNPACK_TARBALL ADDITIONAL LIST_SUITES || true
+unset FIND_BEST_MIRROR BEST_MIRROR LOCAL_SOURCE || true
+unset KEEP_TMP PKG_DIR MIRROR_LIST TRY_MIRRORS || true
+unset MIRROR WGET_DELAY TARBALL_STRIP_DEPTH || true
+unset FORCE_RPM SUITE_NOTES RPMSUITE PDK_SOURCE || true
+unset PRE_SCRIPT POST_SCRIPT IGNORE_ARCH || true
+unset TRY_UPGRADE SUITE_DETAILS || true
+
+if [ "$TMP_DIR" = "" ]; then
+    TMP_DIR="/tmp/rpmstrap."
+    TMP_DIR=${TMP_DIR}$(date +%j%H%M%S)
+fi
+
+PROGNAME=${0##*/}
+PWD=$(pwd)
+PWD=${PWD%/}
+
+# XXX: FIXME
+# This really should happen another way using
+# RPM since rpmstrap may run on a non-RPM system
+ARCH=$(uname -m)
+
+if [ "$RPMSTRAP_DIR" = "" ]; then
+    RPMSTRAP_DIR=/usr/lib/rpmstrap
+fi
+
+. $RPMSTRAP_DIR/functions
+
+usage()
+{
+    cat <<EOF
+Usage: $PROGNAME [OPTION]... <suite> <target> [<mirror>]
+Bootstrap basic RPM-based systems.
+
+    --arch                 set the intended architecture (set if uname is not
+                           installed on base system)
+                            [ --arch x86_64 ]
+
+    --download-only        download packages only and store them in the
+                           target directory
+
+    --delay                insert a friendly delay in seconds between each
+                           attempt to download an RPM
+                            [ --delay .5 ]
+
+    --local-source         specify a local source directory for RPMS
+                            [ --local-source /home/sam/rpm ]
+
+    --pdk-source=A,B       specify a PDK workspace and component to pull RPMs
+                           from
+                            [ --pdk-source=workspace/path/,component.xml ]
+
+    --print-rpms           print the packages to be installed, and exit
+
+    --unpack-tarball       acquire .rpms from a tarball instead of a remote
+                           source
+
+    --strip-path           when unpacking from tarball, use the strip path
+                            (See the texinfo document for tar)
+
+    --list-suites          list the available suites this program knows
+
+    --suite-notes          show the notes associated with a specific suite
+
+    --suite-details        show the details of the suite (items to install
+                            and order)
+
+    --find-best-mirror     find the best mirror (warning VERY slow, may be
+                           better to just use a slow mirror ;-)
+
+    --try-mirrors          instead of just using the default mirror, try
+                           sequentially all of the mirrors in the event of
+                           a failure
+
+    --upgrade              attempt to upgrade a given RPM-based install to
+                           the suite specified
+
+    --force                force installation of RPMs even if there are
+                           errors
+
+    --ignorearch           force installation of RPMs even if they are
+                           for different architecture
+
+    --help                 display this help and exit
+
+    --include=A,B,C        adds specified package filenames to be installed
+                           after the base set has been installed
+
+    --exclude=A,B,C        removes specified packages from the list of packages
+                           to be installed
+
+    --pre                  runs a script before the installation
+                            [ --pre pre-install.sh ]
+
+    --post                 runs a script after the installation has completed
+                            [ --post post-install.sh ]
+
+    --verbose              run in verbose mode
+
+EOF
+}
+
+# Parse command line.
+TEMP=$(getopt -n "$PROGNAME" --options hvf \
+--longoptions help,\
+find-best-mirror,\
+try-mirrors,\
+print-rpms,\
+download-only,\
+list-suites,\
+suite-notes:,\
+arch:,\
+upgrade,\
+force,\
+delay:,\
+local-source:,\
+unpack-tarball:,\
+pre:,\
+post:,\
+strip-path:,\
+include:,\
+exclude:,\
+pdk-source:,\
+suite-details:,\
+verbose -- $*)
+
+if [ $? -ne 0 ]; then
+    die "Error while parsing options"
+fi
+
+eval set -- "$TEMP"
+
+while [ $1 != -- ]; do
+    case "$1" in
+        ## Mirror options
+        --find-best-mirror)
+            # XXX Later on, would be nice if this was persistant
+            FIND_BEST_MIRROR=yes
+            shift
+            ;;
+        --try-mirrors)
+            TRY_MIRRORS=yes
+            shift
+            ;;
+        ## Information options
+        --print-rpms)
+            ONLY_LIST_RPMS=yes
+            shift
+            ;;
+        --list-suites)
+            LIST_SUITES=yes
+            shift
+            ;;
+        --suite-notes)
+            SUITE_NOTES=yes
+            if [ -n "$2" ] ; then
+                RPMSUITE="$2"
+                shift 2
+            else
+                usage_error "option requires an argument $1"
+            fi
+            ;;
+        --suite-details)
+            SUITE_DETAILS=yes
+            if [ -n "$2" ] ; then
+                RPMSUITE="$2"
+                shift 2
+            else
+                usage_error "option requires an argument $1"
+            fi
+            ;;
+        ## Functionality options
+        --upgrade)
+            TRY_UPGRADE=yes
+            shift
+            ;;
+        --download-only)
+            DOWNLOAD_ONLY=yes
+            shift
+            ;;
+        --arch)
+            if [ -n "$2" ] ; then
+                ARCH="$2"
+                shift 2
+            else
+                usage_error "option requires an argument $1"
+            fi
+            ;;
+        --delay)
+            if [ -n "$2" ]; then
+                WGET_DELAY="$2"
+                shift 2
+            else
+                usage_error "option requires an argument $1"
+            fi
+            ;;
+        --local-source)
+            if [ -n "$2" ]; then
+                LOCAL_SOURCE="${2%/}"
+                shift 2
+            else
+                usage_error "option requires an argument $1"
+            fi
+            ;;
+        --unpack-tarball)
+            if [ -n "$2" ] ; then
+                if [ ! -f "$2" ] ; then
+                    usage_error "$2: No such file"
+                fi
+                if [ "$2" = "${2##\/}" ]; then
+                    UNPACK_TARBALL=$PWD/$2
+                else
+                    UNPACK_TARBALL="$2"
+                fi
+                shift 2
+            else
+                usage_error "option requires an argument $1"
+            fi
+            ;;
+        --pre)
+            if [ -n "$2" ]; then
+                PRE_SCRIPT="$2"
+                shift 2
+            else
+                usage_error "option requires an argument $1"
+            fi
+            ;;
+        --post)
+            if [ -n "$2" ]; then
+                POST_SCRIPT="$2"
+                shift 2
+            else
+                usage_error "option requires an argument $1"
+            fi
+            ;;
+        --strip-path)
+            if [ -n "$2" ]; then
+                TARBALL_STRIP_DEPTH="--strip-path=$2"
+            else
+                usage_error "option requires an argument $1"
+            fi
+            shift 2
+            ;;
+        --include)
+            # Please don't do these in a logical fashion
+            # It just makes some people angry
+            INCLUDES="$(echo $1 | sed 's/.*=//;y/,/ /')"
+            shift 1
+            ;;
+        --exclude)
+            EXCLUDES="$(echo $1 | sed 's/.*=//;y/,/ /')"
+            shift 1
+            ;;
+        --pdk-source)
+            PDK_SOURCE="$(echo $1 | cut -f2 -d"=")"
+            PDK_WORKSPACE="$(echo $PDK_SOURCE | cut -f1 -d",")"
+            PDK_COMPONENT="$(echo $PDK_SOURCE | cut -f2 -d",")"
+            shift 1
+            ;;
+        ## Toggles
+        -f|--force)
+            FORCE_RPM=yes
+            shift
+            ;;
+        --ignorearch)
+            IGNORE_ARCH=yes
+            shift
+            ;;
+        -v|--verbose)
+            DEBUG=yes
+            export DEBUG
+            shift 1
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+shift
+
+if [ -n "$LIST_SUITES" ]; then
+    SCRIPT_DIR="$RPMSTRAP_DIR/scripts"
+    SUITES=$(ls $SCRIPT_DIR)
+
+    echo "Possible RPM Suites:"
+    for a in $SUITES
+    do
+        printf "\t$a\n"
+        # XXX This should be done much cleaner later
+    done
+elif [ -n "$SUITE_NOTES" ]; then
+    SCRIPT="$RPMSTRAP_DIR/scripts/$RPMSUITE"
+
+    trace "Loading $SCRIPT suite"
+
+    . $SCRIPT
+
+    trace "Calling $RPMSUITE for notes"
+
+    suite_notes
+elif [ -n "$SUITE_DETAILS" ]; then
+    SCRIPT="$RPMSTRAP_DIR/scripts/$RPMSUITE"
+
+    trace "Loading $SCRIPT suite"
+
+    . $SCRIPT
+
+    trace "Work out RPMS"
+    work_out_rpms
+
+    trace "Calling $RPMSUITE for details"
+    suite_details
+else
+    if [ "$1" = "" ] && ( [ "$2" = "" ] && [ "$ONLY_LIST_RPMS" = "" ] ); then
+        usage_error "You must specify a suite and a target."
+    elif [ "$1" = "" ] && ( [ "$2" = "" ] && [ -n $ONLY_LIST_RPMS ] ); then
+        usage_error "You must specify a suite with the --print-rpms option."
+    fi
+
+    trace "Preparing variables"
+
+    RPMSUITE=$1
+
+    if [ "$2" = "${2##\/}" ]; then
+        TARGET=$PWD/$2
+    else
+        TARGET=$2
+    fi
+    TARGET=${TARGET%/}
+
+    SCRIPT="$RPMSTRAP_DIR/scripts/$RPMSUITE"
+
+    trace "Loading $SCRIPT suite"
+
+    . $SCRIPT
+
+    if [ -n "$3" ]; then
+        trace "Using mirror $3"
+        MIRROR=$3
+    else
+        trace "Working out mirror"
+        work_out_mirror
+    fi
+
+    trace "Work out RPMS"
+    work_out_rpms
+
+    if [ -n "$ONLY_LIST_RPMS" ]; then
+        trace "Just printing RPMS"
+        print_rpms
+    else
+        setup_env
+        trace "Install RPMS"
+        if [ -n "$PRE_SCRIPT" ]; then
+            trace "Running pre-script : $PRE_SCRIPT"
+            . $PRE_SCRIPT
+        fi
+        install_rpms
+        if [ -n "$POST_SCRIPT" ]; then
+            trace "Running post-script : $POST_SCRIPT"
+            . $POST_SCRIPT
+        fi
+        trace "Done"
+        cleanup_env
+    fi
+fi

@@ -1,0 +1,23 @@
+0.5 - Started Changes File
+    - Juraj Bednar <juraj@bednar.sk> submitted amd64 support for CentOS 4
+         + Patch for forcing arch installs
+    - Marco La Rosa <mlarosa@physics.unimelb.edu.au> submitted support
+      for Scientific Linux 3.0.4
+    - Added PDK support in tools and rpmstrap itself
+    - Added pre and post script abilities
+    - Add rpmdiff tools and library
+    - Add rpm_get-arch.py for attempting to convert archs
+    - Add YUM to Stentz
+
+0.5.1 - Reworked the small patch of code submitted by Jake Tabke from
+        Feb 2005 that included stubbed out command-line parsing
+        conditional code from debootstrap
+      - Replaced buggy command-line conditional code with getopt
+        code
+      - Reworded some output to make certain people stop crying
+      - Refused to accept any further code from Jake Tabke
+
+0.5.2 - Update sl402, centos4, centos3
+      - Add suite-details option as well as suite_upgrader in tools
+      - Add upgrade option
+      - Add force option

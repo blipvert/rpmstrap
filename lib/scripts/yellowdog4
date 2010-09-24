@@ -1,0 +1,180 @@
+# This is the rpmstrap script for Yellow Dog Linux 4.
+# It is based upon an rpmstrap originally by
+# Branden Robinson at Progeny Linux Systems, Inc.
+# New segments of code and modifications made by
+# Sam Hart and Derrik Pates.
+
+# Copyright 2004 Progeny Linux Systems, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+suite_notes() {
+    cat <<EOF
+Yellow Dog Linux 4 Suite Script
+-------------------------------
+Builds a basic Yellow Dog Linux 4 bootstrap.
+
+Author: Derrick Pates
+
+EOF
+}
+
+work_out_mirror() {
+    local big_mirror_list=""
+    trace "Checking for $ARCH arch"
+    case $ARCH in
+        ppc)
+            big_mirror_list=$(cat <<EOF
+http://ftp.sunsite.utk.edu/ftp/pub/linux/yellowdog/yellowdog-4.0/en/os/YellowDog/RPMS/
+http://ftp.yellowdoglinux.com/pub/yellowdog/yellowdog-4.0/en/os/YellowDog/RPMS/
+http://mirror.mcs.anl.gov/yellowdog/yellowdog-4.0/en/os/YellowDog/RPMS/
+http://www.mirror.ac.uk/mirror/ftp.yellowdoglinux.com/yellowdog-4.0/en/os/YellowDog/RPMS/
+http://mirror.switch.ch/ftp/mirror/yellowdog/yellowdog-4.0/en/os/YellowDog/RPMS/
+EOF
+            )
+            ;;
+        *)
+            die "Arch $ARCH is unsupported"
+            ;;
+    esac
+
+    set_mirrors $big_mirror_list
+}
+
+work_out_rpms() {
+    case $ARCH in
+        ppc)
+            RPMS=$(cat <<EOF
+0:setup-2.5.33-1.noarch.rpm
+1:filesystem-2.2.4-1.ydl.1.ppc.rpm
+2:basesystem-8.0-3.ydl.1.noarch.rpm
+3:tzdata-2004b-1.noarch.rpm
+4:glibc-common-2.3.3-18.ydl.4.ppc.rpm
+5:libgcc-3.3.3-16.ydl.4.ppc.rpm
+6:glibc-2.3.3-18.ydl.4.ppc.rpm
+7:mktemp-1.5-7.ppc.rpm
+8:termcap-11.0.1-18.1.noarch.rpm
+9:libtermcap-2.0.8-38.ppc.rpm
+10:bash-2.05b-38.ydl.1.ppc.rpm
+11:ncurses-5.4-5.ppc.rpm
+12:zlib-1.2.1.1-2.1.ydl.1.ppc.rpm
+13:info-4.7-4.ppc.rpm
+14:libselinux-1.11.4-1.ppc.rpm
+15:findutils-4.1.7-25.ydl.1.ppc.rpm
+15:pcre-4.5-2.ppc.rpm
+16:grep-2.5.1-26.ppc.rpm
+16:words-2-22.ydl.1.noarch.rpm
+17:libattr-2.4.1-4.ppc.rpm
+18:libacl-2.2.7-5.ppc.rpm
+19:cracklib-2.7-27.1.ppc.rpm
+20:cracklib-dicts-2.7-27.1.ppc.rpm
+21:libstdc++-3.3.3-16.ydl.4.ppc.rpm
+22:db4-4.2.52-3.1.ydl.1.ppc.rpm
+23:glib-1.2.10-12.1.1.ppc.rpm
+24:glib2-2.4.0-1.ppc.rpm
+25:sed-4.0.8-4.ppc.rpm
+26:gawk-3.1.3-7.ppc.rpm
+27:yellowdog-release-4.0-1.ydl.0.ppc.rpm
+28:psmisc-21.4-2.ppc.rpm
+29:iproute-2.4.7-14.ppc.rpm
+30:iputils-20020927-13.ppc.rpm
+31:shadow-utils-4.0.3-21.ppc.rpm
+32:chkconfig-1.3.9-1.1.ppc.rpm
+33:e2fsprogs-1.35-7.1.ppc.rpm
+34:ethtool-1.8-3.1.ppc.rpm
+35:mingetty-1.07-2.ppc.rpm
+36:net-tools-1.60-25.1.ppc.rpm
+37:popt-1.9-0.22.ydl.2.ppc.rpm
+37:less-382-3.ppc.rpm
+37:tar-1.13.25-14.ppc.rpm
+37:hwdata-0.121-1.ydl.7.noarch.rpm
+37:usbutils-0.11-4.ppc.rpm
+37:device-mapper-1.00.14-3.ppc.rpm
+38:dev-3.3.13-1.ydl.3.ppc.rpm
+38:coreutils-5.2.1-7.ppc.rpm
+38:pam-0.77-40.ppc.rpm
+38:mkinitrd-3.5.22-1.ydl.1.ppc.rpm
+38:kernel-2.6.8-1.ydl.7.ppc.rpm
+38:cpio-2.5-6.ppc.rpm
+38:gzip-1.3.3-12.ydl.1.ppc.rpm
+38:MAKEDEV-3.3.13-1.ydl.3.ppc.rpm
+38:hotplug-2004_04_01-1.ppc.rpm
+38:lvm2-2.00.15-2.ppc.rpm
+38:initscripts-7.48-1.ydl.2.ppc.rpm
+38:SysVinit-2.85-25.ydl.1.ppc.rpm
+38:util-linux-2.12pre-3.ppc.rpm
+38:sysklogd-1.4.1-14.ydl.2.ppc.rpm
+38:which-2.16-2.ppc.rpm
+38:modutils-2.4.26-16.ppc.rpm
+38:procps-3.2.0-1.1.ydl.1.ppc.rpm
+38:readline-4.3-10.1.ydl.1.ppc.rpm
+39:beecrypt-3.1.0-3.ppc.rpm
+40:bzip2-libs-1.0.2-12.1.ppc.rpm
+41:bzip2-1.0.2-12.1.ppc.rpm
+42:elfutils-libelf-0.94-2.1.ydl.1.ppc.rpm
+43:elfutils-0.94-2.1.ydl.1.ppc.rpm
+44:gdbm-1.8.0-22.1.ppc.rpm
+45:gmp-4.1.2-13.ydl.1.ppc.rpm
+46:krb5-libs-1.3.3-7.ppc.rpm
+47:openssl-0.9.7a-39.ppc.rpm
+48:libxml2-2.6.8-1.ppc.rpm
+49:python-2.3.3-3.ydl.1.ppc.rpm
+50:libxml2-python-2.6.8-1.ppc.rpm
+50:file-4.07-4.ppc.rpm
+50:perl-5.8.3-18.ppc.rpm
+50:perl-Filter-1.30-5.ppc.rpm
+50:patch-2.5.4-19.ppc.rpm
+51:rpm-build-4.3-0.22.ydl.2.ppc.rpm
+51:rpm-4.3-0.22.ydl.2.ppc.rpm
+52:rpm-python-4.3-0.22.ydl.2.ppc.rpm
+53:wget-1.9.1-5.ppc.rpm
+54:yum-2.0.7-1.1.ydl.1.noarch.rpm
+55:nano-1.2.3-1.ppc.rpm
+56:openldap-2.1.29-1.ppc.rpm
+56:cyrus-sasl-2.1.18-2.ppc.rpm
+56:cyrus-sasl-md5-2.1.18-2.ppc.rpm
+57:libuser-0.51.7-7.1.1.ppc.rpm
+58:passwd-0.68-8.1.ppc.rpm
+59:jfsutils-1.1.4-1.ppc.rpm
+60:xfsprogs-2.6.13-1.ppc.rpm
+EOF
+            )
+            ;;
+        *)
+            # No clue
+            ;;
+esac
+}
+
+print_rpms() {
+    local rpm_list=$(echo "$RPMS" | sed "s/[[:digit:]]\+://")
+
+    echo "RPMs for suite $RPMSUITE and arch $ARCH"
+    for a in $rpm_list
+    do
+        echo " : $a"
+    done
+}
+
+install_rpms() {
+    install_by_pass $RPMS
+}
+
+suite_details() {
+    for a in $RPMS
+    do
+        echo $a
+    done
+}

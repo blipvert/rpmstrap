@@ -1,0 +1,29 @@
+At present, there is a very stupid installer.
+
+To install rpmstrap to the default locations, run the install script:
+  $ ./install.sh
+  
+To purge or uninstall, run the script with the -p option:
+  $ ./install.sh -p
+  
+The install script also has a very stupid help message if you run with -h:
+  $ ./install.sh -h
+
+You can specify different installation locations by exporting the following
+variables before running the install script:
+   $BINDIR
+      This is where the binaries go. Defaults to /usr/bin
+   $LIBDIR
+      This is where the libraries go. Defaults to /usr/lib/rpmstrap
+   $DOCDUR
+      This is where the documentation goes. Defaults to /usr/share/doc
+
+Note that if you store the lib files in a directory other than
+/usr/lib/rpmstrap, you will either have to edit the rpmstrap
+script itself to set the proper location, or set $RPMSTRAP_DIR
+in your local environment to point to them.
+
+If anyone wants to help out with the installer, please do so.
+
+-- Sam Hart <_sam_@-progeny-.'com'>
+

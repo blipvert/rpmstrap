@@ -1,0 +1,394 @@
+# Copyright 2004 Progeny Linux Systems, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+# Author: Sam Hart
+
+suite_notes() {
+    cat <<EOF
+Mandriva 10.x Suite Script
+--------------------------
+Builds a basic Mandriva 10.x bootstrap.
+
+Authors: Sam Hart
+
+WARNING:
+    This suite script is buggy at best. There seem to be some circular
+    dependency issues that I cannot resolve. Patches would be gladly
+    accepted.
+
+    Use this script at your own risk.
+
+EOF
+}
+
+
+work_out_mirror() {
+    local big_mirror_list=""
+    case $ARCH in
+        i[3456]86)
+            big_mirror_list=$(cat <<EOF
+http://mirrors.kernel.org/mandrake/Mandrakelinux/official/10.2/i586/media/main/
+http://mirrors.xmission.com/mandrake/official/10.2/i586/media/main/
+http://mandrake.mirrors.pair.com/Mandrakelinux/official/10.2/i586/media/main/
+http://www.gtlib.gatech.edu/pub/mandrake/official/10.2/i586/media/main/
+EOF
+            )
+            ;;
+        *)
+            die "Arch $ARCH is unsupported"
+            ;;
+    esac
+
+    set_mirrors $big_mirror_list
+}
+
+work_out_rpms() {
+    case $ARCH in
+        i[3456]86)
+            RPMS=$(cat <<EOF
+0:ldconfig-2.3.4-8mdk.i586.rpm
+1:sash-3.7-3mdk.i586.rpm
+2:common-licenses-1.0-9mdk.noarch.rpm
+3:pwdb-conf-0.62-2mdk.i586.rpm
+4:libbeecrypt6-3.1.0-5mdk.i586.rpm
+4:libtermcap2-2.0.8-36mdk.i586.rpm
+4:bash-3.0-2mdk.i586.rpm
+4:glibc-2.3.4-8mdk.i586.rpm
+4:perl-base-5.8.6-6mdk.i586.rpm
+4:zlib1-1.2.2.2-2mdk.i586.rpm
+4:popt-1.8.3-9mdk.i586.rpm
+4:chkconfig-1.3.13-3mdk.i586.rpm
+4:mktemp-1.5-12mdk.i586.rpm
+4:libncurses5-5.4-1.20050108.1mdk.i586.rpm
+4:libbzip2_1-1.0.2-20mdk.i586.rpm
+4:bzip2-1.0.2-20mdk.i586.rpm
+4:info-install-4.8-1mdk.i586.rpm
+4:gawk-3.1.4-1mdk.i586.rpm
+4:perl-MDK-Common-1.1.22-2mdk.i586.rpm
+4:libpwdb0-0.62-2mdk.i586.rpm
+4:libcrack2-2.7-18mdk.i586.rpm
+4:shadow-utils-4.0.3-9mdk.i586.rpm
+4:setup-2.6-1mdk.i586.rpm
+4:libglib2.0_0-2.6.3-1mdk.i586.rpm
+4:libselinux1-1.21.11-1mdk.i586.rpm
+4:libuser1-0.53.2-3mdk.i586.rpm
+4:ldetect-lst-0.1.82-1mdk.i586.rpm
+4:mount-2.12a-12mdk.i586.rpm
+4:libelfutils1-0.99-1mdk.i586.rpm
+4:ifplugd-0.26-2mdk.i586.rpm
+4:iputils-20020927-5mdk.i586.rpm
+4:iproute2-2.6.10-1mdk.i586.rpm
+4:elfutils-0.99-1mdk.i586.rpm
+4:libldetect0.6-0.6.1-1mdk.i586.rpm
+4:cracklib-dicts-2.7-18mdk.i586.rpm
+4:make-3.80-8mdk.i586.rpm
+4:sed-4.1.4-2mdk.i586.rpm
+4:diffutils-2.8.7-2mdk.i586.rpm
+4:which-2.16-2mdk.i586.rpm
+4:findutils-4.2.18-2mdk.i586.rpm
+4:psmisc-21.5-3mdk.i586.rpm
+4:libmagic1-4.13-1mdk.i586.rpm
+4:file-4.13-1mdk.i586.rpm
+4:packdrake-5.0.20-1mdk.i586.rpm
+4:perl-Config-IniFiles-2.38-3mdk.noarch.rpm
+4:libopenssl0.9.7-0.9.7e-5mdk.i586.rpm
+4:libslang1-1.4.9-6mdk.i586.rpm
+4:ifmetric-0.3-3mdk.i586.rpm
+4:libdb4.2-4.2.52-6mdk.i586.rpm
+4:libusb0.1_4-0.1.8-7mdk.i586.rpm
+4:usbutils-0.70-3mdk.i586.rpm
+4:unzip-5.51-1mdk.i586.rpm
+4:libsasl2-2.1.19-12mdk.i586.rpm
+4:mingetty-1.07-3mdk.i586.rpm
+4:libiw27-27-1mdk.i586.rpm
+4:wireless-tools-27-1mdk.i586.rpm
+4:ethtool-1.8-1mdk.i586.rpm
+4:hotplug-2004_09_23-7mdk.i586.rpm
+4:libsysfs1-1.2.0-2mdk.i586.rpm
+4:sysfsutils-1.2.0-2mdk.i586.rpm
+4:libglib1.2-1.2.10-15mdk.i586.rpm
+4:libpam0-0.77-27mdk.i586.rpm
+4:libintl3-0.14.1-10mdk.i586.rpm
+4:gettext-base-0.14.1-10mdk.i586.rpm
+4:ncurses-5.4-1.20050108.1mdk.i586.rpm
+4:ld.so1-1.9.11-10mdk.i586.rpm
+4:pkgconfig-0.15.0-5mdk.i586.rpm
+4:libpcre0-5.0-2mdk.i586.rpm
+4:grep-2.5.1a-1mdk.i586.rpm
+4:coreutils-5.2.1-5mdk.i586.rpm
+4:rpm-helper-0.10-1mdk.noarch.rpm
+4:pam-0.77-27mdk.i586.rpm
+4:e2fsprogs-1.36-3mdk.i586.rpm
+4:libext2fs2-1.36-3mdk.i586.rpm
+4:procps-3.2.5-1mdk.i586.rpm
+4:libldap2.2_7-2.2.23-5mdk.i586.rpm
+4:libuser-0.53.2-3mdk.i586.rpm
+4:util-linux-2.12a-12mdk.i586.rpm
+4:SysVinit-2.85-4mdk.i586.rpm
+4:dmidecode-2.6-1mdk.i586.rpm
+4:less-382-9mdk.i586.rpm
+4:gzip-1.2.4a-14mdk.i586.rpm
+4:openldap-2.2.23-5mdk.i586.rpm
+4:passwd-0.68-3mdk.i586.rpm
+4:rmt-0.4b37-2mdk.i586.rpm
+4:libc-base-5.3.12-39mdk.i586.rpm
+4:rpm-4.2.3-9mdk.i586.rpm
+4:modutils-2.4.26-3mdk.i586.rpm
+4:tar-1.15.1-2mdk.i586.rpm
+4:mkinitrd-4.1.12-9mdk.i586.rpm
+4:sound-scripts-0.25-1mdk.noarch.rpm
+4:module-init-tools-3.0-7mdk.i586.rpm
+4:kernel-2.6.11.6mdk-1-1mdk.i586.rpm
+4:perl-URPM-1.11-1mdk.i586.rpm
+4:drakxtools-backend-10.2-24mdk.i586.rpm
+4:cpio-2.6-3mdk.i586.rpm
+4:udev-054-6mdk.i586.rpm
+4:rpmtools-5.0.20-1mdk.i586.rpm
+4:initscripts-7.61.1-26mdk.i586.rpm
+4:bootloader-utils-1.9-2mdk.i586.rpm
+5:man-1.5m2-2mdk.i586.rpm
+6:groff-for-man-1.19-9mdk.i586.rpm
+7:libstdc++6-3.4.3-7mdk.i586.rpm
+8:libstdc++5-3.3.4-4mdk.i586.rpm
+9:libgcc1-3.4.3-7mdk.i586.rpm
+EOF
+            )
+            ;;
+        old386)
+            RPMS=$(cat <<EOF
+0:SysVinit-2.85-4mdk.i586.rpm
+0:bash-3.0-2mdk.i586.rpm
+0:bootloader-utils-1.9-2mdk.i586.rpm
+0:bzip2-1.0.2-20mdk.i586.rpm
+0:chkconfig-1.3.13-3mdk.i586.rpm
+0:common-licenses-1.0-9mdk.noarch.rpm
+0:coreutils-5.2.1-5mdk.i586.rpm
+0:cpio-2.6-3mdk.i586.rpm
+0:cracklib-dicts-2.7-18mdk.i586.rpm
+0:diffutils-2.8.7-2mdk.i586.rpm
+0:dmidecode-2.6-1mdk.i586.rpm
+0:drakxtools-backend-10.2-24mdk.i586.rpm
+0:e2fsprogs-1.36-3mdk.i586.rpm
+0:elfutils-0.99-1mdk.i586.rpm
+0:ethtool-1.8-1mdk.i586.rpm
+0:file-4.13-1mdk.i586.rpm
+0:findutils-4.2.18-2mdk.i586.rpm
+0:gawk-3.1.4-1mdk.i586.rpm
+0:gettext-base-0.14.1-10mdk.i586.rpm
+0:glibc-2.3.4-8mdk.i586.rpm
+0:grep-2.5.1a-1mdk.i586.rpm
+0:gzip-1.2.4a-14mdk.i586.rpm
+0:hotplug-2004_09_23-7mdk.i586.rpm
+0:ifmetric-0.3-3mdk.i586.rpm
+0:ifplugd-0.26-2mdk.i586.rpm
+0:info-install-4.8-1mdk.i586.rpm
+0:initscripts-7.61.1-26mdk.i586.rpm
+0:iproute2-2.6.10-1mdk.i586.rpm
+0:iputils-20020927-5mdk.i586.rpm
+0:kernel-2.6.11.6mdk-1-1mdk.i586.rpm
+0:ld.so1-1.9.11-10mdk.i586.rpm
+0:ldconfig-2.3.4-8mdk.i586.rpm
+0:ldetect-lst-0.1.82-1mdk.i586.rpm
+0:less-382-9mdk.i586.rpm
+0:libbeecrypt6-3.1.0-5mdk.i586.rpm
+0:libbzip2_1-1.0.2-20mdk.i586.rpm
+0:libc-base-5.3.12-39mdk.i586.rpm
+0:libcrack2-2.7-18mdk.i586.rpm
+0:libdb4.2-4.2.52-6mdk.i586.rpm
+0:libelfutils1-0.99-1mdk.i586.rpm
+0:libext2fs2-1.36-3mdk.i586.rpm
+0:libglib1.2-1.2.10-15mdk.i586.rpm
+0:libglib2.0_0-2.6.3-1mdk.i586.rpm
+0:libintl3-0.14.1-10mdk.i586.rpm
+0:libiw27-27-1mdk.i586.rpm
+0:libldap2.2_7-2.2.23-5mdk.i586.rpm
+0:libldetect0.6-0.6.1-1mdk.i586.rpm
+0:libmagic1-4.13-1mdk.i586.rpm
+0:libncurses5-5.4-1.20050108.1mdk.i586.rpm
+0:libopenssl0.9.7-0.9.7e-5mdk.i586.rpm
+0:libpam0-0.77-27mdk.i586.rpm
+0:libpcre0-5.0-2mdk.i586.rpm
+0:libpwdb0-0.62-2mdk.i586.rpm
+0:libsasl2-2.1.19-12mdk.i586.rpm
+0:libselinux1-1.21.11-1mdk.i586.rpm
+0:libslang1-1.4.9-6mdk.i586.rpm
+0:libsysfs1-1.2.0-2mdk.i586.rpm
+0:libtermcap2-2.0.8-36mdk.i586.rpm
+0:libusb0.1_4-0.1.8-7mdk.i586.rpm
+0:libuser-0.53.2-3mdk.i586.rpm
+0:libuser1-0.53.2-3mdk.i586.rpm
+0:make-3.80-8mdk.i586.rpm
+0:mingetty-1.07-3mdk.i586.rpm
+0:mkinitrd-4.1.12-9mdk.i586.rpm
+0:mktemp-1.5-12mdk.i586.rpm
+0:module-init-tools-3.0-7mdk.i586.rpm
+0:modutils-2.4.26-3mdk.i586.rpm
+0:mount-2.12a-12mdk.i586.rpm
+0:ncurses-5.4-1.20050108.1mdk.i586.rpm
+0:openldap-2.2.23-5mdk.i586.rpm
+0:packdrake-5.0.20-1mdk.i586.rpm
+0:pam-0.77-27mdk.i586.rpm
+0:passwd-0.68-3mdk.i586.rpm
+0:perl-Config-IniFiles-2.38-3mdk.noarch.rpm
+0:perl-MDK-Common-1.1.22-2mdk.i586.rpm
+0:perl-URPM-1.11-1mdk.i586.rpm
+0:perl-base-5.8.6-6mdk.i586.rpm
+0:pkgconfig-0.15.0-5mdk.i586.rpm
+0:popt-1.8.3-9mdk.i586.rpm
+0:procps-3.2.5-1mdk.i586.rpm
+0:psmisc-21.5-3mdk.i586.rpm
+0:pwdb-conf-0.62-2mdk.i586.rpm
+0:rmt-0.4b37-2mdk.i586.rpm
+0:rpm-4.2.3-9mdk.i586.rpm
+0:rpm-helper-0.10-1mdk.noarch.rpm
+0:rpmtools-5.0.20-1mdk.i586.rpm
+0:sash-3.7-3mdk.i586.rpm
+0:sed-4.1.4-2mdk.i586.rpm
+0:setup-2.6-1mdk.i586.rpm
+0:shadow-utils-4.0.3-9mdk.i586.rpm
+0:sound-scripts-0.25-1mdk.noarch.rpm
+0:sysfsutils-1.2.0-2mdk.i586.rpm
+0:tar-1.15.1-2mdk.i586.rpm
+0:udev-054-6mdk.i586.rpm
+0:unzip-5.51-1mdk.i586.rpm
+0:usbutils-0.70-3mdk.i586.rpm
+0:util-linux-2.12a-12mdk.i586.rpm
+0:which-2.16-2mdk.i586.rpm
+0:wireless-tools-27-1mdk.i586.rpm
+0:zlib1-1.2.2.2-2mdk.i586.rpm
+EOF
+            )
+            ;;
+        *)
+            # No clue
+            die "Unsupported architecture"
+            ;;
+esac
+}
+
+mdk_install_by_pass() {
+    # Given a list of RPMs ordered by pass, will install them
+    # This is the basic install function provided by rpmstrap,
+    # if you need anything else above and beyond this, you
+    # will have to script it yourself.
+    local RPMS_LIST=$1
+    shift
+    for a in $@
+    do
+        local b=$(echo "$a" | sed "s/[[:digit:]]\+://")
+        if ! echo "$EXCLUDES" | grep $b > /dev/null; then
+            RPMS_LIST=$(echo -e "$RPMS_LIST\n$a")
+        else
+            trace "'$b' found in exclude list. Removing from install.."
+        fi
+    done
+    local rpms_to_get=$(echo "$RPMS_LIST" | sed "s/[[:digit:]]\+://")
+    get_rpms $rpms_to_get
+
+    # FIXME
+    # Horrible, I know, but these stupid Mandriva RPMs just refuse
+    # to behave.
+    local rpm_force_opt="--force --nodeps --noscripts"
+
+    if [ "$DOWNLOAD_ONLY" = "" ]; then
+        if [ $(id -u) -ne 0 ]; then
+            die "must have root privileges to create target"
+        fi
+
+        trace "creating target directory"
+        if [ -e "$TARGET" ]; then
+            warn "target directory $TARGET already exists"
+        fi
+
+        mkdir -p "$TARGET/var/lib/rpm"
+
+        local passnum=0
+
+        cd $PKG_DIR
+
+        while :; do
+            trace "Installing pass number $passnum..."
+            local pass=$(echo "$RPMS_LIST" | grep "^$passnum:" | sed 's/^[0-9]\+://')
+            if [ -z "$pass" ]; then
+                trace "...nothing left to do."
+                break
+            else
+                set -- $pass
+
+                # make sure each RPM exists
+                for RPM; do
+                    if [ ! -e "$RPM" ]; then
+                        die "cannot find required package $RPM"
+                    fi
+                done
+
+                # rpm insists on having an absolute path to its --root option's argument
+                if ! expr "$TARGET" : "/" >/dev/null 2>&1; then
+                    TARGET="$PWD/$TARGET"
+                fi
+                trace "Installing $* to $TARGET..."
+                if ! rpm --install $rpm_force_opt --root "$TARGET" $@; then
+                    warn "command \"rpm --install $rpm_force_opt --root $TARGET $*\"" \
+                    "failed"
+                fi
+            fi
+            passnum=$(( $passnum + 1 ))
+        done
+
+        for fname in $INCLUDES;
+        do
+            trace "Installing included package : $fname..."
+            if ! rpm --install $rpm_force_opt --root "$TARGET" $fname; then
+                die "command \"rpm --install $rpm_force_opt --root $TARGET $fname\"" \
+                "failed"
+            fi
+        done
+
+        cd $PWD
+    fi
+}
+
+print_rpms() {
+    local rpm_list=$(echo "$RPMS" | sed "s/[[:digit:]]\+://")
+
+    echo "RPMs for suite $RPMSUITE and arch $ARCH"
+    for a in $rpm_list
+    do
+        echo " : $a"
+    done
+}
+
+install_rpms() {
+    warn "**************************************************************"
+    warn "* Currently, Mandriva support is spotty at best..."
+    warn "* You will probably have problems with it"
+    warn "* If someone would like to help me out with the Mandriva suite"
+    warn "* scripts, please come to http://pimpscript.net/"
+    warn "**************************************************************"
+    mdk_install_by_pass $RPMS
+
+    # FIXME
+    # ACK! Hackish foo!
+    mkdir -p $TARGET/proc
+    touch $TARGET/etc/fstab
+}
+
+suite_details() {
+    for a in $RPMS
+    do
+        echo $a
+    done
+}

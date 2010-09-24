@@ -1,0 +1,15 @@
+* The x86_64 (and other archs) are buggy or not yet supported.
+Right now, only i[3456]86 is. These archs should be added.
+
+* Docs need to be better. There is very little explanation of
+the necessary functions provided to suite scripts by rpmstrap.
+
+* We need to decide how to handle RPM DB corruption. For example,
+if I build a CentOS 4 chroot on my Debian box, I am doing so
+with a radically different version of RPM than will be living
+inside the CentOS 4 chroot. Sure you can rebuild it afterward
+manually, but should the script handle this for you?
+
+* Rename TMP_DIR to RPMSTRAP_TMP_DIR at some point to avoid
+naming conflicts across other apps.
+

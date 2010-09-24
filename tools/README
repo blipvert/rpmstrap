@@ -1,0 +1,38 @@
+rpmstrap tools
+--------------
+Inside this directory you will find tools associated in some way with
+rpmstrap.
+
+* rpm_solver.py
+   Basic Python script that can take a pool of RPMs and check for
+   dependency closure. Additionally, if given a second pool containing
+   all possible RPMs for a given distribution it will attempt to solve
+   for dependency.
+   
+   If pool has dependency closure, rpm_solver.py will produce an
+   installation order for the pool according to the RPM libraries.
+   
+   This installation order is then ready for use in an rpmstrap suite
+   script.
+   
+* rpm_refiner.py
+   Sometimes, RPM's libraries don't deal very well with circular
+   dependencies (rather, they don't seem to expose those items
+   necessary to deal with these circular dependencies to the API users).
+   
+   In these cases, rpm_solver.py will produce unusable installation
+   orders.
+   
+   rpm_refiner.py takes a pool of RPMs which have dependency closure, and
+   attempts to build chroots with them until it has worked out a usable
+   installation order.
+   
+   If no order can be found, rpm_refiner.py will not work.
+
+* rpm_get-arch.py
+   Given a pool of RPMs for a given arch, this script will attempt
+   to verify that you have (or can get) all RPMs for another arch.
+   
+   This script is useful if you have one arch all worked out (e.g.
+   x86) but want to try to work out the rpmstrap script for
+   another arch (e.g., ppc).

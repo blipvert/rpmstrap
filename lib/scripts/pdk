@@ -1,0 +1,77 @@
+# Copyright 2005 Progeny Linux Systems, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+# Author: Sam Hart
+
+suite_notes() {
+    cat <<EOF
+PDK Suite Script
+----------------
+A very basic PDK suite script. If your PDK product has dependency
+closure, and you have an installation order in the meta tags, you
+can use rpmstrap to bootstrap your RPM-based PDK product.
+
+Author: Sam Hart
+
+EOF
+}
+
+
+work_out_mirror() {
+    # All we do here is verify we've been called correctly
+    if [ -n "$PDK_SOURCE" ]; then
+        warn "About to pull from PDK source"
+        warn "Be sure your component descriptor is properly formated for rpmstrap's consumption"
+    else
+        usage_error "The PDK suite script must be called with the --pdk-source option"
+    fi
+}
+
+work_out_rpms() {
+    local PDK_REPORT_XML=$(cat <<EOF
+<?xml version="1.0"?>
+<component>
+  <meta>
+    <repo-type>report</repo-type>
+    <combined-format>%(target)s:%(filename)s</combined-format>
+  </meta>
+  <contents>
+    <component>$PDK_COMPONENT</component>
+  </contents>
+</component>
+EOF
+    )
+    setup_env
+    echo $PDK_REPORT_XML > $TMP_DIR/.order_report.xml
+
+    RPMS=$(cd $PDK_WORKSPACE/work; pdk repogen $TMP_DIR/.order_report.xml | sort -n)
+    trace $RPMS
+    cleanup_env
+}
+
+print_rpms() {
+    local rpm_list=$(echo "$RPMS" | sed "s/[[:digit:]]\+://")
+
+    echo "RPMs for suite $RPMSUITE and arch $ARCH"
+    for a in $rpm_list
+    do
+        echo " : $a"
+    done
+}
+
+install_rpms() {
+    install_by_pass $RPMS
+}

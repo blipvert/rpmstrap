@@ -1,0 +1,168 @@
+Can there be an API for a bash script? Why the heck not?
+
+GLOBAL VARIABLES:
+-----------------
+The following are global variables available to the suite scripts.
+
+DEBUG                   Boolean. If true, issue debugging information.
+
+ONLY_LIST_RPMS          Boolean. If true, will only print the RPMs
+                        needed for a suite.
+
+DOWNLOAD_ONLY           Boolean. If true, will only download and
+                        not install the RPMs for a given suite.
+
+ARCH                    The installation architecture.
+
+UNPACK_TARBALL          A tarball containing RPMs to install.
+
+ADDITIONAL              A list of additional packages to install.
+                        Suite scripts should tack these additional
+                        packages on to the end of their list.
+
+LIST_SUITES             Boolean. If true, rpmstrap will list the
+                        suites it knows of.
+                        *Suite scripts should not modify this.*
+                        *Suite scripts will never be run if this is
+                         true.*
+
+FIND_BEST_MIRROR        Boolean. If true, then the user has requested
+                        finding the best mirror.
+                        *Suite scripts should not modify this.*
+
+BEST_MIRROR             In the event that we use one mirror, this
+                        variable should house the best and/or default
+                        one. Suite scripts MUST set this variable to
+                        their desired default inside of
+                        work_out_mirror() (either as default or as
+                        the mirror determined by find_best_mirror().
+
+LOCAL_SOURCE            Local repository of RPMs. This will be
+                        used instead of downloading files.  Suite
+                        scripts should not use this as this
+                        location for RPMs. They should use
+                        PKG_DIR instead.
+                        *Suite scripts should not modify this.*
+
+TMP_DIR                 Location of a temp directory for
+                        downloading files. Suite scripts should
+                        not use this as the location for RPMs.
+                        They should use PKG_DIR instead.
+                        *Suite scripts should not modify this.*
+
+KEEP_TMP                Boolean for determining if the TMP_DIR
+                        should be kept around after script is done.
+                        Used with LOCAL_SOURCE as well as for
+                        debugging purposes.
+                        *Suite scripts should not modify this.*
+
+PKG_DIR                 This will be the directory where the RPMs
+                        will be stored locally. In the event that
+                        we have LOCAL_SOURCE set, this will be
+                        PKG_DIR, otherwise it will be TMP_DIR.
+                        *Suite scripts should not modify this.*
+
+MIRROR_LIST             Array of possible mirror choices. Suite
+                        scripts can keep internal arrays for this,
+                        but should populate this global one as well
+                        in case the user requests TRY_MIRRORS.
+
+TRY_MIRRORS             Boolean for determining if the app should
+                        sequentially run down the mirror list.
+
+MIRROR                  If defined, it is the user supplied mirror.
+                        *Suite scripts should not modify this.*
+
+WGET_DELAY              If defined, it is the delay that wget should
+                        use between get attempts.
+                        *Suite scripts should not modify this.*
+
+TARBALL_STRIP_DEPTH     Contains the strip depth (see man tar) when
+                        using a tar ball source.
+
+FORCE_RPM               Boolean. If true then RPM installation is
+                        forced regardless of dependency or other
+                        problems.
+
+SUITE_NOTES             Boolean. If true, then the user wants suite
+                        notes.
+                        *Suite scripts should not modify this.*
+
+SUITE_DETAILS           Boolean. If true, then the user wants the
+                        details of what the suite script will install
+                        as well as order detail.
+                        *Suite scripts should not modify this.*
+
+PDK_SOURCE              The PDK source information.
+
+PRE_SCRIPT              Script to run before install.
+                        *Suite scripts should not modify this.*
+
+POST_SCRIPT             Script to run post install.
+                        *Suite scripts should not modify this.*
+
+IGNORE_ARCH             Boolean for determining if the arch should
+                        be ignored during install.
+
+TRY_UPGRADE             This indicates the user wants to attempt an
+                        upgrade instead of an install in the directory
+                        specified. It is up to the suite script to
+                        deal with this (modify install RPMs, etc).
+
+RPMSTRAP FUNCTIONS:
+-------------------
+The following functions are available from rpmstrap for use in
+suite scripts.
+
+trace()                 This function is for debugging. Call it with
+                        text to be displayed. If DEBUG is set, trace
+                        will print it.
+
+warn()                  Call this function if an error has occured, but
+                        the error is non-critical and we simply need to
+                        warn the user about it.
+
+die()                   Call this function if a critical error occurs.
+                        Will not return.
+
+get_rpms()              Given a list of RPMs, will grab them and place
+                        them in a temporary directory. May also place
+                        the RPMs into a target directory if the
+                        DOWNLOAD_ONLY option is selected.
+
+get_rpms_fuzzy()        Given a list of partial RPM names, will attempt
+                        to download them from the mirror(s). NOTE: This
+                        function is very very very slow.
+
+find_best_mirror()      Find a best (quickest) mirror. This is WAY slow.
+                        You probably never want to call this. It is
+                        around for some planned future functionality.
+
+set_mirrors()           Given a list of mirrors, set them up such that
+                        RPMSTRAP uses them.
+
+REQUIRED SUITE SCRIPT FUNCTIONS:
+--------------------------------
+The following functions MUST be present inside the suite script.
+
+suite_notes()           This function will display any notes pertaining
+                        to the suite. There is no /real/ format for these,
+                        but generally it includes author, what the suite
+                        does, any warnings or limitations, as well as
+                        usage information (if aplicable).
+
+suite_details()         Dump the raw rpm installation order details.
+
+work_out_mirror()       This function should figure out which mirror
+                        list to use and call the rpmstrap function
+                        set_mirrors() with this list.
+
+work_out_rpms()         This function should figure out the RPMs to
+                        install for a given ARCH.
+
+print_rpms()            This function should print a list of RPMs
+                        needed for this suite to run on the given ARCH.
+
+install_rpms()          Called last, this is the function that performs
+                        the actually installation of the suite to the
+                        chroot.
