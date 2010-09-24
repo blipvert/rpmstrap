@@ -437,6 +437,7 @@ EOF
 16:openldap-2.3.27-5.x86_64.rpm
 16:libuser-0.54.7-2.el5.1.x86_64.rpm
 16:passwd-0.73-1.x86_64.rpm
+EOF
 	    )
 	    ;;
         *)
