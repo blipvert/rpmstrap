@@ -1,0 +1,102 @@
+# Copyright 2005 Progeny Linux Systems, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+# Authors: Sam Hart
+#          Jake Tabke
+#          Derrik Pates
+#          Juraj Bednar (i386 support)
+
+suite_notes() {
+    cat <<EOF
+CentOS 5 Suite Script
+---------------------
+Builds a basic CentOS 5 bootstrap.
+
+Authors: Sam Hart, Jake Tabke, Derrik Pates, Juraj Bednar
+
+Updated by Boris van der Beken (for 5.0) 
+
+Updated by Oliver Werner (for 5.0 amd64)
+
+EOF
+}
+
+work_out_mirror() {
+    local big_mirror_list=""
+    case $ARCH in
+        i[3456]86)
+            big_mirror_list=$(cat <<EOF
+http://vault.centos.org/5.3/os/i386/CentOS/
+EOF
+            )
+            ;;
+        *)
+            die "Arch $ARCH is unsupported"
+            ;;
+    esac
+
+    set_mirrors $big_mirror_list
+}
+
+work_out_rpms() {
+    case $ARCH in
+        i[3456]86)
+            RPMS=$(cat <<EOF
+0:setup-2.5.58-4.el5.noarch.rpm
+1:filesystem-2.4.0-2.el5.centos.i386.rpm
+2:basesystem-8.0-5.1.1.el5.centos.noarch.rpm
+3:tzdata-2008i-1.el5.noarch.rpm
+4:glibc-common-2.5-34.i386.rpm
+5:libgcc-4.1.2-44.el5.i386.rpm
+6:glibc-2.5-34.i686.rpm
+7:mktemp-1.5-23.2.2.i386.rpm
+8:termcap-5.5-1.20060701.1.noarch.rpm
+9:libtermcap-2.0.8-46.1.i386.rpm
+10:bash-3.2-24.el5.i386.rpm
+11:ncurses-5.5-24.20060715.i386.rpm
+12:zlib-1.2.3-3.i386.rpm
+13:info-4.8-14.el5.i386.rpm
+EOF
+            )
+            ;;
+        *)
+            # No clue
+            ;;
+esac
+}
+
+print_rpms() {
+    local rpm_list=$(echo "$RPMS" | sed "s/[[:digit:]]\+://")
+
+    echo "RPMs for suite $RPMSUITE and arch $ARCH"
+    for a in $rpm_list
+    do
+        echo " : $a"
+    done
+}
+
+install_rpms() {
+    install_by_pass $RPMS
+}
+
+suite_details() {
+    for a in $RPMS
+    do
+        echo $a
+    done
+}
+
+
